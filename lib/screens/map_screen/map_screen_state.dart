@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:geocoding/geocoding.dart';
-
+import '../../services/geocoder_service.dart';
 class MapState {
   final double latitude;
   final double longitude;
@@ -16,7 +15,9 @@ class MapState {
 }
 
 class MapStateNotifier extends StateNotifier<MapState> {
-  MapStateNotifier() : super(MapState(latitude: 0, longitude: 0, address: '', searchError: null));
+  final GeocoderService geocoderService;
+
+  MapStateNotifier(this.geocoderService) : super(MapState(latitude: 0, longitude: 0, address: '', searchError: null));
 
   void updateLocation(double latitude, double longitude) {
     state = MapState(latitude: latitude, longitude: longitude, address: state.address);
@@ -28,11 +29,12 @@ class MapStateNotifier extends StateNotifier<MapState> {
 
   Future<void> searchByAddress(String address) async {
     try {
-      // final locations = await locationFromAddress(address);
-      // if (locations.isNotEmpty) {
-      //   state = MapState(latitude: locations.first.latitude, longitude: locations.first.longitude, address: address);
-      // }
-      print(address);
+      final coordinates = await geocoderService.getCoordinatesFromAddress(address);
+      state = MapState(
+        latitude: coordinates['latitude']!,
+        longitude: coordinates['longitude']!,
+        address: address
+      );
     } catch (e) {
       setSearchError('Error searching by address: $e');
     }
@@ -40,12 +42,12 @@ class MapStateNotifier extends StateNotifier<MapState> {
 
   Future<void> searchByCoordinates(double latitude, double longitude) async {
     try {
-      // final placeMarks = await placemarkFromCoordinates(latitude, longitude);
-      // if (placeMarks.isNotEmpty) {
-      //   final address = '${placeMarks.first.street}, ${placeMarks.first.locality}, ${placeMarks.first.country}';
-      //   state = MapState(latitude: latitude, longitude: longitude, address: address);
-      // }
-      print("$latitude, $longitude");
+      final address = await geocoderService.getAddressFromCoordinates(latitude, longitude);
+      state = MapState(
+        latitude: latitude,
+        longitude: longitude,
+        address: address
+      );
     } catch (e) {
       setSearchError('Error searching by coordinates: $e');
     }

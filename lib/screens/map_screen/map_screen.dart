@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
+import '../../services/dio_service.dart';
+import '../../services/geocoder_service.dart';
 import 'map_screen_state.dart';
 
 final mapStateProvider = StateNotifierProvider<MapStateNotifier, MapState>(
-    (ref) => MapStateNotifier());
+    (ref) => MapStateNotifier(
+      GeocoderService(ref.read(dioServiceProvider))
+    ));
 
 class MapScreen extends ConsumerWidget {
   const MapScreen({super.key});
@@ -23,7 +26,7 @@ class MapScreen extends ConsumerWidget {
           GoogleMap(
             initialCameraPosition: CameraPosition(
               target: LatLng(mapState.latitude, mapState.longitude),
-              zoom: 14,
+              zoom: 3,
             ),
             onMapCreated: (controller) {
               // Initialize map controller if needed
