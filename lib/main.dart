@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pixelprospectors_fe/screens/map_screen/search_dialog/search_dialog_state.dart';
+import 'package:pixelprospectors_fe/services/geocoder_service.dart';
 import 'package:pixelprospectors_fe/screens/map_screen/map_screen.dart';
+
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));

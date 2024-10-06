@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../screens/map_screen/models/address_search_result.dart';
 import 'dio_service.dart';
 
 class GeocoderService {
@@ -26,7 +27,8 @@ class GeocoderService {
     }
   }
 
-  Future<Map<String, double>> getCoordinatesFromAddress(String address) async {
+  Future<List<AddressSearchResult>> searchCoordinatesFromAddress(String address) async {
+    print("Calling geocoder $address");
     try {
       final response = await dioService.dio.get(
         'https://maps.googleapis.com/maps/api/geocode/json',
@@ -36,16 +38,22 @@ class GeocoderService {
         },
       );
       final data = response.data;
-      if (data['results'].isNotEmpty) {
-        final location = data['results'][0]['geometry']['location'];
-        return {
-          'latitude': location['lat'],
-          'longitude': location['lng'],
-        };
+      print(data.toString());
+      if (data['results'] != null && data['results'].isNotEmpty) {
+        final results = data['results'].take(10).map((result) {
+          final location = result['geometry']['location'];
+          return AddressSearchResult(
+            address: result['formatted_address'],
+            latitude: location['lat'],
+            longitude: location['lng'],
+          );
+        }).toList();
+        print(results.toString());
+        return results;
       }
-      throw Exception('No results found');
+      return <AddressSearchResult>[];
     } on DioException catch (e) {
-      throw Exception('Failed to get coordinates: ${e.message}');
+      throw Exception('Failed to get search results: ${e.message}');
     }
   }
 }

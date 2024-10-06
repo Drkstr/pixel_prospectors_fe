@@ -4,6 +4,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../services/dio_service.dart';
 import '../../services/geocoder_service.dart';
 import 'map_screen_state.dart';
+import 'models/address_search_result.dart';
+import 'search_dialog/search_dialog.dart';
 
 final mapStateProvider = StateNotifierProvider<MapStateNotifier, MapState>(
     (ref) => MapStateNotifier(
@@ -13,19 +15,46 @@ final mapStateProvider = StateNotifierProvider<MapStateNotifier, MapState>(
 class MapScreen extends ConsumerWidget {
   const MapScreen({super.key});
 
+  void _showSearchDialog(BuildContext context, WidgetRef ref) async {
+    final result = await showDialog<AddressSearchResult>(
+      context: context,
+      builder: (context) => const SearchDialog(),
+    );
+    if (result != null) {
+      ref.read(mapStateProvider.notifier).updateLocation(result.latitude, result.longitude);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mapState = ref.watch(mapStateProvider);
-    final addressController = TextEditingController();
-    final latitudeController = TextEditingController();
-    final longitudeController = TextEditingController();
-    final searchError = mapState.searchError;
     return Scaffold(
+      appBar: AppBar(
+        // title: const Text('Map'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => _showSearchDialog(context, ref),
+          ),
+          DropdownButton<String>(
+            value: 'English',
+            items: ['English', 'Spanish', 'French'].map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              // Handle language change
+            },
+          )
+        ],
+      ),
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(mapState.latitude, mapState.longitude),
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(0, 0),
               zoom: 3,
             ),
             onMapCreated: (controller) {
@@ -37,82 +66,6 @@ class MapScreen extends ConsumerWidget {
                     position.target.longitude,
                   );
             },
-          ),
-          Positioned(
-            top: 50,
-            left: 20,
-            right: 20,
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: addressController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search by address',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => ref
-                            .read(mapStateProvider.notifier)
-                            .searchByAddress(addressController.text),
-                        child: const Text('Search'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: latitudeController,
-                          decoration: const InputDecoration(
-                              hintText: 'Latitude', border: InputBorder.none),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: longitudeController,
-                          decoration: const InputDecoration(
-                              hintText: 'Longitude', border: InputBorder.none),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => ref
-                            .read(mapStateProvider.notifier)
-                            .searchByCoordinates(
-                              double.parse(latitudeController.text),
-                              double.parse(longitudeController.text),
-                            ),
-                        child: const Text('Search'),
-                      ),
-                    ],
-                  ),
-                ),
-                if (searchError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                        searchError, style: const TextStyle(color: Colors.red)),
-                  ),
-              ],
-            ),
           ),
         ],
       ),
